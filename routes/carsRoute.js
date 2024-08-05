@@ -1,7 +1,75 @@
 const express = require('express');
 const router = express.Router();
 const Car = require('../models/carModel');
+// Route to fetch available cars based on date range
+router.get('/cars', async (req, res) => {
+  const { from, to } = req.query;
 
+  try {
+    const cars = await Car.find({
+      'bookedTimeSlots.from': { $gte: new Date(from) },
+      'bookedTimeSlots.to': { $lte: new Date(to) }
+    });
+
+    res.json(cars);
+  } catch (error) {
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+});
+// Route for fetching reviews
+router.get("/reviews/:carId", async (req, res) => {
+  const { carId } = req.params;
+
+  try {
+    const car = await Car.findById(carId).populate('reviews.userId', 'username');
+    if (!car) {
+      return res.status(404).json({ error: "Car not found" });
+    }
+
+    res.json(car.reviews);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+// Route for adding a review
+router.post("/addReview", async (req, res) => {
+  const { carId, userId, rating, comment } = req.body;
+
+  try {
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ error: "Car not found" });
+    }
+
+    const newReview = { userId, rating, comment };
+    car.reviews.push(newReview);
+    await car.save();
+
+    res.send("Review added successfully");
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+// Route for searching and filtering cars
+router.get("/search", async (req, res) => {
+  try {
+    const { category, minBudget, maxBudget } = req.query;
+
+    // Build the query object
+    let query = {};
+    if (category) query.category = category;
+    if (minBudget) query.rentPerHour = { $gte: minBudget };
+    if (maxBudget) {
+      query.rentPerHour = query.rentPerHour || {};
+      query.rentPerHour.$lte = maxBudget;
+    }
+
+    const cars = await Car.find(query);
+    res.json(cars);
+  } catch (error) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
 // Route to get all cars
 router.get('/getallcars', async (req, res) => {
   try {
