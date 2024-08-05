@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
-const JWT_SECRET = 'JWT_SECRET'; 
+const JWT_SECRET = 'your_jwt_secret'; // Replace with your secret key
 
 // Middleware to parse cookies
 router.use(cookieParser());

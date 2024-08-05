@@ -95,7 +95,7 @@ const stripe = require("stripe")("sk_test_51PfEQKIGMXT0myEMkagrj8DFPcRe6TrgyUEHk
 
 // Route to book a car
 router.post("/bookings/bookingcar", async (req, res) => {
-  const { token, totalAmount, car} = req.body;
+  const { token, totalAmount, car, bookedTimeSlots } = req.body;
   try {
     const customer = await stripe.customers.create({
       email: token.email,
@@ -120,11 +120,12 @@ router.post("/bookings/bookingcar", async (req, res) => {
       await newBooking.save();
 
       const carToUpdate = await Car.findById(car);
-      console.log(carToUpdate)
-      // carToUpdate.bookedTimeSlots.updateOne(bookedTimeSlots);
-      console.log(carToUpdate.bookedTimeSlots)
+      if (!carToUpdate) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+
+      carToUpdate.bookedTimeSlots.push(bookedTimeSlots);
       await carToUpdate.save();
-      
 
       res.send("Your booking is successful");
     } else {
@@ -135,6 +136,7 @@ router.post("/bookings/bookingcar", async (req, res) => {
     res.status(400).json({ error: "Something went wrong" });
   }
 });
+
 
 // Route to get all bookings
 router.get("/getallbookings", async (req, res) => {
