@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'JWT_SECRET';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const authMiddleware = (req, res, next) => {
-  const token = req.cookies.token;
+  const token = req.cookies?.token;
   if (!token) {
-    return res.status(401).json({ error: "Access denied" });
+    return res.status(401).json({ error: "Access denied, no token provided" });
   }
 
   try {
@@ -12,7 +12,7 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ error: "Invalid token" });
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 };
 

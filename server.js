@@ -21,7 +21,6 @@ app.use(express.json());
 app.use("/api/cars", carRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/bookings', bookingRoute); // Correct the route path
-
 app.post('/payment', async (req, res) => {
   try {
     // Create a payment session using Stripe

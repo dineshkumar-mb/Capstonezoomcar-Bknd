@@ -12,6 +12,7 @@ const bookingSchema = new mongoose.Schema(
     totalAmount: { type: Number },
     transactionId: { type: String },
     driverRequired: { type: Boolean },
+    rating: { type: Number, default: 0 } // Added rating field
 
   },
   { timestamps: true }

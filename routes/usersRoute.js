@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const User = require("../models/userModel");
@@ -6,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
-const JWT_SECRET = 'your_jwt_secret'; // Replace with your secret key
+const JWT_SECRET = process.env.JWT_SECRET || 'jwt_secret'; // Use environment variable for secret key
 
 // Middleware to parse cookies
 router.use(cookieParser());
@@ -14,6 +13,10 @@ router.use(cookieParser());
 // Route for user login
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "Please provide both username and password" });
+  }
 
   try {
     const user = await User.findOne({ username });
@@ -35,23 +38,29 @@ router.post("/login", async (req, res) => {
 
 // Route for user registration
 router.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "Please provide both username and password" });
+  }
+
   try {
-    const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ error: "Username already exists" });
     }
 
-    const newUser = new User({ username, password });
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
-    res.send("User registered successfully");
+
+    res.json({ message: "User registered successfully" });
   } catch (error) {
     res.status(500).json({ error: "Something went wrong" });
   }
 });
 
 module.exports = router;
-
 
 
 
