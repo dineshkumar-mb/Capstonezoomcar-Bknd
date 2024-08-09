@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Car = require('../models/carModel');
+router. use=(express.json()); // Middleware to parse JSON
 
 // Route to fetch available cars based on date range
 router.get('/cars', async (req, res) => {
@@ -38,30 +39,6 @@ router.get('/reviews/:carId', async (req, res) => {
     }
 
     res.json(car.reviews);
-  } catch (error) {
-    res.status(500).json({ error: 'Something went wrong' });
-  }
-});
-
-// Route for adding a review
-router.post('/addReview', async (req, res) => {
-  const { carId, userId, rating, comment } = req.body;
-
-  if (!carId || !userId || !rating || !comment) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
-
-  try {
-    const car = await Car.findById(carId);
-    if (!car) {
-      return res.status(404).json({ error: 'Car not found' });
-    }
-
-    const newReview = { userId, rating, comment };
-    car.reviews.push(newReview);
-    await car.save();
-
-    res.send('Review added successfully');
   } catch (error) {
     res.status(500).json({ error: 'Something went wrong' });
   }
@@ -155,36 +132,46 @@ router.delete('/deletecar/:id', async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 });
-
-// Route to add a rating and review
 router.post('/rate/:carId', async (req, res) => {
+  const { ratings, reviews } = req.body;
   const { carId } = req.params;
-  const { rating, review, user } = req.body;
 
-  if (!mongoose.Types.ObjectId.isValid(carId)) {
-    return res.status(400).json({ error: 'Invalid car ID format' });
+  console.log('Car ID:', carId);
+  console.log('Request Body:', req.body); // Debugging log
+
+  if (!ratings || !reviews) {
+    return res.status(400).json({ error: "No records uploaded!" });
   }
 
-  if (!rating || !review || !user) {
-    return res.status(400).json({ error: 'All fields are required' });
+  if (typeof ratings !== 'number' || ratings < 1 || ratings > 5) {
+    return res.status(400).json({ error: 'Ratings must be a number between 1 and 5' });
+  }
+
+  if (typeof reviews !== 'string' || reviews.trim() === '') {
+    return res.status(400).json({ error: 'Reviews must be a non-empty string' });
   }
 
   try {
-    const car = await Car.findById(carId);
-    if (!car) {
+    // Find the car by ID and push the new review and rating
+    const updatedCar = await Car.findByIdAndUpdate(
+      carId,
+      {
+        $push: {
+          reviews: { ratings, reviews },  // Push new review object to the reviews array
+          ratings: ratings                // Push new rating to the ratings array
+        }
+      },
+      { new: true, useFindAndModify: false } // Return the updated document
+    );
+
+    if (!updatedCar) {
       return res.status(404).json({ error: 'Car not found' });
     }
 
-    car.ratings = car.ratings || [];
-    car.reviews = car.reviews || [];
-
-    car.ratings.push(rating);
-    car.reviews.push({ user, review, rating });
-    await car.save();
-
-    res.status(200).json({ message: 'Rating and review added' });
+    res.status(200).json({ message: 'Review submitted successfully', car: updatedCar });
   } catch (error) {
-    res.status(500).json({ error: 'Something went wrong' });
+    console.error('Error submitting review:', error); // Debugging log
+    res.status(500).json({ error: 'An error occurred while submitting the review' });
   }
 });
 
@@ -228,9 +215,9 @@ module.exports = router;
 //     res.status(400).json(error);
 //   }
 // });
-// // Route for adding a review
-// router.post("/addReview", async (req, res) => {
-//   const { carId, userId, rating, comment } = req.body;
+// // Route for adding a reviews
+// router.post("/addreviews", async (req, res) => {
+//   const { carId, userId, ratings, comment } = req.body;
 
 //   try {
 //     const car = await Car.findById(carId);
@@ -238,11 +225,11 @@ module.exports = router;
 //       return res.status(404).json({ error: "Car not found" });
 //     }
 
-//     const newReview = { userId, rating, comment };
-//     car.reviews.push(newReview);
+//     const newreviews = { userId, ratings, comment };
+//     car.reviews.push(newreviews);
 //     await car.save();
 
-//     res.send("Review added successfully");
+//     res.send("reviews added successfully");
 //   } catch (error) {
 //     res.status(400).json(error);
 //   }
@@ -326,14 +313,14 @@ module.exports = router;
 //   }
 // });
 
-// // Route to add a rating and review
+// // Route to add a ratings and reviews
 // router.post('/rate/:carId', async (req, res) => {
 //   try {
 //     const { carId } = req.params;
-//     const { rating, review, user } = req.body;
+//     const { ratings, reviews, user } = req.body;
 
 //     // Log the carId for debugging
-//     console.log(`Adding rating for carId: ${carId}`);
+//     console.log(`Adding ratings for carId: ${carId}`);
 
 //     // Validate carId
 //     if (!mongoose.Types.ObjectId.isValid(carId)) {
@@ -349,11 +336,11 @@ module.exports = router;
 //     car.ratings = car.ratings || [];
 //     car.reviews = car.reviews || [];
 
-//     car.ratings.push(rating);
-//     car.reviews.push({ user, review, rating });
+//     car.ratings.push(ratings);
+//     car.reviews.push({ user, reviews, ratings });
 //     await car.save();
 
-//     res.status(200).json({ message: 'Rating and review added' });
+//     res.status(200).json({ message: 'ratings and reviews added' });
 //   } catch (error) {
 //     res.status(400).json({ error: error.message });
 //   }
