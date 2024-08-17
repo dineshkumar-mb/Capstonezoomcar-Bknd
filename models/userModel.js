@@ -1,22 +1,21 @@
-// user autentication  by implementings jwt cookie parser bcrypt 
+// user autentication  by implementings jwt  bcrypt 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-
-const userSchema = new mongoose.Schema({
+// Define the User schema
+const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  // other fields...
+  role: { type: String, default: 'User' } // 'admin' for admin users
 });
 
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+// Middleware to hash password before saving user
+// UserSchema.pre('save', async function (next) {
+//   if (!this.isModified('password')) return next(); // Only hash if the password has been modified or is new
+//   const salt = await bcrypt.genSalt(10);
+//   this.password = await bcrypt.hash(this.password, salt);
+//   next();
+// });
 
-const User = mongoose.model('User', userSchema);
-module.exports = User;
-
+// Export the User model
+module.exports = mongoose.model('User', UserSchema);
 

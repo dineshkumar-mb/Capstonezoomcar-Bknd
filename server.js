@@ -10,11 +10,13 @@ const moment = require('moment'); // Import the moment library
 
 const { MONGODB_URI, PORT } = require("./utils/config");
 
-const app = express();
 
+const app = express();
+app.use(express.json())
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://capstonezoomcar-frnd.vercel.app'
+  // 'https://capstonezoomcar-frnd.vercel.app'
+  'http://localhost:3001'
 ];
 
 app.use(cors({

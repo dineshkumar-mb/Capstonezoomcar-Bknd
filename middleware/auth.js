@@ -1,19 +1,23 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET;
+const User = require('../models/userModel');
 
 const authMiddleware = (req, res, next) => {
-  const token = req.cookies?.token;
-  if (!token) {
-    return res.status(401).json({ error: "Access denied, no token provided" });
-  }
+  const token = req.header('Authorization').replace('Bearer ', '');
+  if (!token) return res.status(401).send('Access Denied');
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+    const verified = jwt.verify(token, 'jwt_secret');
+    req.user = verified;
     next();
   } catch (error) {
-    res.status(401).json({ error: "Invalid or expired token" });
+    res.status(400).send('Invalid Token');
   }
 };
 
-module.exports = authMiddleware;
+const adminMiddleware = async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+  if (user.role !== 'admin') return res.status(403).send('Access Denied');
+  next();
+};
+
+module.exports = { authMiddleware, adminMiddleware };
