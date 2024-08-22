@@ -7,7 +7,18 @@ const stripe = require("stripe")("sk_test_51PfEQKIGMXT0myEMkagrj8DFPcRe6TrgyUEHk
 // Route to book a car
 router.post("/bookingcar", async (req, res) => {
   const { token, totalAmount, car, bookedTimeSlots } = req.body;
+  const { from, to } = bookedTimeSlots;
+
   try {
+    // Check if the booking time slots are in the future
+    const currentTime = moment();
+    const fromTime = moment(from, "MMM DD YYYY HH:mm");
+    const toTime = moment(to, "MMM DD YYYY HH:mm");
+
+    if (fromTime.isBefore(currentTime) || toTime.isBefore(currentTime)) {
+      return res.status(400).json({ error: "Cannot book a car for past dates." });
+    }
+
     const customer = await stripe.customers.create({
       email: token.email,
       source: token.id,
@@ -47,6 +58,49 @@ router.post("/bookingcar", async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+
+// router.post("/bookingcar", async (req, res) => {
+//   const { token, totalAmount, car, bookedTimeSlots } = req.body;
+//   try {
+//     const customer = await stripe.customers.create({
+//       email: token.email,
+//       source: token.id,
+//     });
+
+//     const payment = await stripe.charges.create(
+//       {
+//         amount: totalAmount * 100,
+//         currency: "INR",
+//         customer: customer.id,
+//         receipt_email: token.email,
+//       },
+//       {
+//         idempotencyKey: uuidv4(),
+//       }
+//     );
+
+//     if (payment) {
+//       req.body.transactionId = payment.source.id;
+//       const newBooking = new Booking(req.body);
+//       await newBooking.save();
+
+//       const carToUpdate = await Car.findById(car);
+//       if (!carToUpdate) {
+//         return res.status(404).json({ error: "Car not found" });
+//       }
+
+//       carToUpdate.bookedTimeSlots.push(bookedTimeSlots);
+//       await carToUpdate.save();
+
+//       res.send("Your booking is successful");
+//     } else {
+//       res.status(400).json({ error: "Payment failed" });
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Something went wrong" });
+//   }
+// });
 
 // Route to get all bookings
 router.get("/getallbookings", async (req, res) => {
