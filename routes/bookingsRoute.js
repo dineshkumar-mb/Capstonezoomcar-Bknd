@@ -59,6 +59,21 @@ router.get("/getallbookings", async (req, res) => {
   }
 });
 
+// Route to get bookings for a specific user
+router.get("/userbookings", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ error: "userId query parameter is required" });
+    }
+    const bookings = await Booking.find({ user: userId }).populate('car');
+    res.send(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
 // Update booking
 router.put("/bookings/:id", async (req, res) => {
   try {
