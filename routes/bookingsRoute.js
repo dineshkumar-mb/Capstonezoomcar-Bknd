@@ -119,14 +119,19 @@ router.delete("/delete/:id", async (req, res) => {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    const car = await Car.findById(booking.car);
-    car.bookedTimeSlots = car.bookedTimeSlots.filter(
-      slot => !(
-        slot.from === booking.bookedTimeSlots.from && 
-        slot.to === booking.bookedTimeSlots.to
-      )
-    );
-    await car.save();
+    // Only clean up car's booked slots if the car reference exists
+    if (booking.car) {
+      const car = await Car.findById(booking.car);
+      if (car) {
+        car.bookedTimeSlots = car.bookedTimeSlots.filter(
+          slot => !(
+            slot.from === booking.bookedTimeSlots.from &&
+            slot.to === booking.bookedTimeSlots.to
+          )
+        );
+        await car.save();
+      }
+    }
 
     res.status(200).send("Booking canceled successfully");
   } catch (error) {
