@@ -8,7 +8,9 @@ const cors = require('cors');
 const stripe = require('stripe')('SECRET_KEY'); // Replace with your actual secret key
 const moment = require('moment'); // Import the moment library
 
-const { MONGODB_URI, PORT } = require("./utils/config");
+const { MONGODB_URI, PORT, ENABLE_SWAGGER } = require("./utils/config");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger/swagger");
 
 
 const app = express();
@@ -34,6 +36,14 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+if (ENABLE_SWAGGER !== 'false') {
+  app.get('/api-docs.json', (req, res) => {
+    res.json(swaggerSpec);
+  });
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(JSON.parse(JSON.stringify(swaggerSpec))));
+}
+
 app.use("/api/cars", carRoute);
 app.use('/api/users', usersRoute);
 app.use('/api/bookings', bookingRoute); // Correct the route path
